@@ -1,7 +1,8 @@
-local_model_path="/data/public/model/Qwen/Qwen-Image"
+# local_model_path="/data/public/model/Qwen/Qwen-Image"
+model_id="Qwen/Qwen-Image"
 
 python qwen_image/taylorseer_qwen_image/batch_infer.py \
-    --model "$local_model_path" \
+    --model "$model_id" \
     --steps 50 \
     --height 1024 \
     --width 1024 \
