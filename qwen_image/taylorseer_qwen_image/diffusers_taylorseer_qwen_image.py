@@ -1,6 +1,5 @@
 import argparse
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '5, 6'
 import re
 import time
 
@@ -68,6 +67,7 @@ def parse_args() -> argparse.Namespace:
         help="HuggingFace model id or local path.",
     )
     parser.add_argument("--device", type=str, default="cuda", choices=["cuda", "cpu"], help="Compute device.")
+
     return parser.parse_args()
 
 
