@@ -38,3 +38,5 @@ outputs/
 logs/
 *.log
 tmp/
+
+.env
