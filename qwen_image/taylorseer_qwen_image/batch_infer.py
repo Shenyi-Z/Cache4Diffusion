@@ -1,6 +1,5 @@
 import argparse
 import os
-os.environ['CUDA_VISIBLE_DEVICES'] = '0, 1, 2, 3'
 import re
 import time
 from typing import List, Optional
@@ -103,7 +102,6 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Optional maximum number of prompts to process.",
     )
-
     return parser.parse_args()
 
 
@@ -152,7 +150,7 @@ def main() -> None:
         device_map = "balanced"
     )
 
-    # TaylorSeer settings and forward overrides
+    # TaylorSeer settings and forward overrides        
     pipeline.transformer.__class__.num_steps = int(args.steps)
     pipeline.transformer.__class__.forward = taylorseer_qwen_image_forward
     for transformer_block in pipeline.transformer.transformer_blocks:
