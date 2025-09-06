@@ -1,10 +1,11 @@
 local_model_path="/data/public/model/Qwen/Qwen-Image"
 model_id="Qwen/Qwen-Image"
-export CUDA_VISIBLE_DEVICES='5, 6'
+# export CUDA_VISIBLE_DEVICES='5, 6'
+export ACCELERATE_DEVICE_MAP='{"text_encoder":0,"transformer":1,"vae":2,"final_layer":3,"image_proj_model":3}'
 
 # cd qwen_image
 python qwen_image/taylorseer_qwen_image/diffusers_taylorseer_qwen_image.py \
-    --model "$model_id" \
+    --model "$local_model_path" \
     --steps 50 \
     --seed 42 \
     --dtype bfloat16 \

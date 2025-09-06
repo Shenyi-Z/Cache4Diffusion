@@ -1,2 +1,3 @@
 from .qwen_image_forward import taylorseer_qwen_image_forward
 from .qwen_image_mmdit_forward import taylorseer_qwen_image_mmdit_forward
+from .qwen_image_pipeline_call import taylorseer_qwen_image_pipeline_call

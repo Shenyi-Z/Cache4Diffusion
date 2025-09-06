@@ -1,5 +1,7 @@
 import argparse
 import os
+os.environ['CUDA_VISIBLE_DEVICES'] = '0, 1, 2, 3'
+os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'expandable_segments:True'
 import re
 import time
 
@@ -10,6 +12,7 @@ from diffusers.utils import logging
 from forwards import (
     taylorseer_qwen_image_mmdit_forward,
     taylorseer_qwen_image_forward,
+    taylorseer_qwen_image_pipeline_call,
 )
 
 
@@ -80,19 +83,25 @@ def main() -> None:
     if args.device == "cpu" and torch_dtype in (torch.bfloat16, torch.float16):
         print("Requested low-precision dtype on CPU; overriding to float32 for compatibility.")
         torch_dtype = torch.float32
-
+    
     pipeline = DiffusionPipeline.from_pretrained(
         args.model, 
         torch_dtype=torch_dtype,
         low_cpu_mem_usage=True,
-        device_map = "balanced"
+        device_map='balanced'
     )
 
+    '''
     # TaylorSeer settings and forward overrides
     pipeline.transformer.__class__.num_steps = int(args.steps)
-    pipeline.transformer.__class__.forward = taylorseer_qwen_image_forward
+    # pipeline.transformer.__class__.forward = taylorseer_qwen_image_forward
+    # for single_transformer_block in pipeline.transformer.transformer_blocks:
+    #     single_transformer_block.__class__.forward = taylorseer_qwen_image_mmdit_forward
+    pipeline.transformer.forward = taylorseer_qwen_image_forward.__get__(pipeline.transformer, pipeline.transformer.__class__)
     for single_transformer_block in pipeline.transformer.transformer_blocks:
-        single_transformer_block.__class__.forward = taylorseer_qwen_image_mmdit_forward
+        single_transformer_block.forward = taylorseer_qwen_image_mmdit_forward.__get__(single_transformer_block, single_transformer_block.__class__)
+    # pipeline.__class__.__call__ = taylorseer_qwen_image_pipeline_call
+    '''
 
     if args.enable_cpu_offload:
         raise NotImplementedError("CPU offload is not supported for TaylorSeer yet.")
@@ -118,7 +127,7 @@ def main() -> None:
         # height=int(args.height) if hasattr(args, 'height') else 1024,
         num_inference_steps=int(args.steps),
         true_cfg_scale=float(args.true_cfg_scale),
-        generator=torch.Generator("cpu").manual_seed(int(args.seed)),
+        generator=torch.Generator("cuda").manual_seed(int(args.seed)),
     ).images[0]
 
     if is_cuda:

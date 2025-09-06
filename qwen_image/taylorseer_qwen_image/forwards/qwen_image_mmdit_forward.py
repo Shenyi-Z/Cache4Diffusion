@@ -1,4 +1,4 @@
-# QwenImageTransformerBlock(mmdit) forward with taylorseer
+# QwenImageTransformerBlock(double_stream) forward with taylorseer
 # similar to double stream transformer block of flux
 
 import torch
@@ -39,7 +39,6 @@ def taylorseer_qwen_image_mmdit_forward(
     # 4. Splits results back to separate streams
     joint_attention_kwargs = joint_attention_kwargs or {}
 
-    # TODO
     cache_dic = joint_attention_kwargs['cache_dic']
     current = joint_attention_kwargs['current']
 
@@ -102,6 +101,7 @@ def taylorseer_qwen_image_mmdit_forward(
 
 
     elif current['type'] == 'Taylor':
+        current['stream'] = 'double_stream'
         current['module'] = 'attn'
         # Attention.
         # symbolic placeholder

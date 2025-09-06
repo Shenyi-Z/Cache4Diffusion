@@ -18,19 +18,19 @@ def cache_init(self: QwenImageTransformer2DModel):
     cache_dic['attn_map'][-1] = {}
     # cache_dic['attn_map'][-1]['double_stream'] = {}
     # cache_dic['attn_map'][-1]['single_stream'] = {}
-    cache_dic['attn_map'][-1]['MMDiT'] = {}
+    cache_dic['attn_map'][-1]['double_stream'] = {}
 
     # cache[-1]['double_stream']={}
     # cache[-1]['single_stream']={}
-    cache[-1]['MMDiT']={}
+    cache[-1]['double_stream']={}
     cache_dic['cache_counter'] = 0
 
     # for j in range(60):
     for i in range(self.config.num_layers):
-        cache[-1]['MMDiT'][i] = {}
+        cache[-1]['double_stream'][i] = {}
         cache_index[-1][i] = {}
-        cache_dic['attn_map'][-1]['MMDiT'][i] = {}
-        cache_dic['attn_map'][-1]['MMDiT'][i]['total'] = {}
+        cache_dic['attn_map'][-1]['double_stream'][i] = {}
+        cache_dic['attn_map'][-1]['double_stream'][i]['total'] = {}
 
     # #for j in range(19):
     # for j in range(self.config.num_layers):

@@ -6,6 +6,8 @@ from typing import List, Optional
 
 import torch
 from diffusers import DiffusionPipeline
+from diffusers.models import QwenImageTransformer2DModel
+from diffusers.models.transformers.transformer_qwenimage import QwenImageTransformerBlock
 
 from forwards import (
     taylorseer_qwen_image_forward,
@@ -102,6 +104,11 @@ def parse_args() -> argparse.Namespace:
         default=None,
         help="Optional maximum number of prompts to process.",
     )
+    parser.add_argument(
+        "--use_taylor",
+        action="store_true",
+        help="If set, enables TaylorSeer optimizations.",
+    )
     return parser.parse_args()
 
 
@@ -150,11 +157,19 @@ def main() -> None:
         device_map = "balanced"
     )
 
-    # TaylorSeer settings and forward overrides        
-    pipeline.transformer.__class__.num_steps = int(args.steps)
-    pipeline.transformer.__class__.forward = taylorseer_qwen_image_forward
-    for transformer_block in pipeline.transformer.transformer_blocks:
-        transformer_block.__class__.forward = taylorseer_qwen_image_mmdit_forward
+    # if args.use_taylor:
+    # # TaylorSeer settings and forward overrides        
+    #     print("Applying TaylorSeer optimizations.")
+    #     pipeline.transformer.__class__.num_steps = int(args.steps)
+    #     pipeline.transformer.__class__.forward = taylorseer_qwen_image_forward
+    #     for transformer_block in pipeline.transformer.transformer_blocks:
+    #         transformer_block.__class__.forward = taylorseer_qwen_image_mmdit_forward
+    # else:
+    #     print("TaylorSeer optimizations are disabled.")
+    #     pipeline.transformer.__class__.num_steps = int(args.steps)
+    #     pipeline.transformer.__class__.forward = QwenImageTransformer2DModel.forward
+    #     for transformer_block in pipeline.transformer.transformer_blocks:
+    #         transformer_block.__class__.forward = QwenImageTransformerBlock.forward
 
     if args.enable_cpu_offload:
         raise NotImplementedError("CPU offload is not supported for TaylorSeer yet.")
