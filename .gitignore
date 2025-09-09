@@ -41,3 +41,4 @@ tmp/
 
 .env
 eval/
+.vscode

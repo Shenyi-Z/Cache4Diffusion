@@ -70,6 +70,11 @@ def parse_args() -> argparse.Namespace:
         help="HuggingFace model id or local path.",
     )
     parser.add_argument("--device", type=str, default="cuda", choices=["cuda", "cpu"], help="Compute device.")
+    parser.add_argument(
+        "--use_taylor",
+        action="store_true",
+        help="Use TaylorSeer overrides for the transformer blocks.",
+    )
 
     return parser.parse_args()
 
@@ -91,17 +96,14 @@ def main() -> None:
         device_map='balanced'
     )
 
-    '''
-    # TaylorSeer settings and forward overrides
-    pipeline.transformer.__class__.num_steps = int(args.steps)
-    # pipeline.transformer.__class__.forward = taylorseer_qwen_image_forward
-    # for single_transformer_block in pipeline.transformer.transformer_blocks:
-    #     single_transformer_block.__class__.forward = taylorseer_qwen_image_mmdit_forward
-    pipeline.transformer.forward = taylorseer_qwen_image_forward.__get__(pipeline.transformer, pipeline.transformer.__class__)
-    for single_transformer_block in pipeline.transformer.transformer_blocks:
-        single_transformer_block.forward = taylorseer_qwen_image_mmdit_forward.__get__(single_transformer_block, single_transformer_block.__class__)
-    # pipeline.__class__.__call__ = taylorseer_qwen_image_pipeline_call
-    '''
+    if args.use_taylor:
+        # TaylorSeer settings and forward overrides
+        pipeline.transformer.__class__.num_steps = int(args.steps)
+        # pipeline.transformer.__class__.forward = taylorseer_qwen_image_forward
+        pipeline.transformer.forward = taylorseer_qwen_image_forward.__get__(pipeline.transformer, pipeline.transformer.__class__)
+        for transformer_block in pipeline.transformer.transformer_blocks:
+            transformer_block.forward = taylorseer_qwen_image_mmdit_forward.__get__(transformer_block, transformer_block.__class__)
+        # pipeline.__class__.__call__ = taylorseer_qwen_image_pipeline_call  # OOM if use this replaced call method. No parallelism, only set device_map='balanced' when load pipe
 
     if args.enable_cpu_offload:
         raise NotImplementedError("CPU offload is not supported for TaylorSeer yet.")
