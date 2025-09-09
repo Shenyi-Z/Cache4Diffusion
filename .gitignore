@@ -40,5 +40,6 @@ logs/
 tmp/
 
 .env
-eval/
 .vscode
+/eval/
+qwen_image/taylorseer_qwen_image/eval/geneval_outputs
