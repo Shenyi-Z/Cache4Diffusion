@@ -19,7 +19,7 @@ from diffusers.schedulers.scheduling_dpmsolver_multistep import DPMSolverMultist
 # If TaylorSeer is used, you need to import its forward functions.
 # Make sure the 'forwards' module is accessible from this script's location.
 # For example, by adding its path to sys.path or placing it correctly.
-from forwards import taylorseer_qwen_image_forward, taylorseer_qwen_image_mmdit_forward
+from taylorseer_qwen_image.forwards import taylorseer_qwen_image_forward, taylorseer_qwen_image_mmdit_forward
 
 def get_torch_dtype(dtype_name: str) -> torch.dtype:
     if dtype_name == "float16":
@@ -86,7 +86,7 @@ def main(opt):
         opt.model, 
         torch_dtype=torch_dtype,
         low_cpu_mem_usage=True,
-        device_map="balanced" # Or "auto" or a specific device
+        device_map="cuda" # Or "auto" or a specific device
     )
 
     if opt.sampler.lower() == 'dpm++':

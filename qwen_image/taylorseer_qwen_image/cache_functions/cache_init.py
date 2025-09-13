@@ -6,7 +6,6 @@ O = 1
 def cache_init(self: QwenImageTransformer2DModel):   
     '''
     Initialization for cache.
-    TODO: modify for qwen-image
     '''
     cache_dic = {}
     cache = {}

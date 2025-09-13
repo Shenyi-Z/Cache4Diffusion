@@ -13,7 +13,7 @@ from diffusers.utils import USE_PEFT_BACKEND, is_torch_version, logging, scale_l
 import torch
 import numpy as np
 
-from cache_functions import cache_init, cal_type
+from taylorseer_qwen_image.cache_functions import cache_init, cal_type
 
 def taylorseer_qwen_image_forward(
     self,

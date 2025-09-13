@@ -4,7 +4,7 @@
 import torch
 from typing import Any, Dict, Optional, Tuple, Union
 from diffusers.models.transformers.transformer_qwenimage import QwenImageTransformerBlock
-from taylorseer_utils import derivative_approximation, taylor_formula, taylor_cache_init
+from taylorseer_qwen_image.taylorseer_utils import derivative_approximation, taylor_formula, taylor_cache_init
 
 def taylorseer_qwen_image_mmdit_forward(
     self: QwenImageTransformerBlock,
