@@ -1,5 +1,4 @@
-# TODO: fit for hunyuanvideo
-from .flux_forward import taylorseer_flux_forward
-#from .xfuser_flux_forward import taylorseer_xfuser_flux_forward
-from .single_transformer_forward import taylorseer_flux_single_block_forward
-from .double_transformer_forward import taylorseer_flux_double_block_forward
+from .hunyuan_video_forward import taylorseer_hunyuan_video_forward
+#from .xfuser_hunyuan_video_forward import taylorseer_xfuser_hunyuan_video_forward
+from .single_transformer_forward import taylorseer_hunyuan_video_single_block_forward
+from .double_transformer_forward import taylorseer_hunyuan_video_double_block_forward

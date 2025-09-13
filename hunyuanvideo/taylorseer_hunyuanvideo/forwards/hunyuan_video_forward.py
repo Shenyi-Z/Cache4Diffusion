@@ -7,7 +7,7 @@ from transformers import T5EncoderModel
 
 from typing import Any, Dict, Optional, Tuple, Union
 from diffusers import DiffusionPipeline
-from diffusers.models import FluxTransformer2DModel
+from diffusers.models import HunyuanVideoTransformer3DModel
 from diffusers.models.modeling_outputs import Transformer2DModelOutput
 from diffusers.utils import USE_PEFT_BACKEND, is_torch_version, logging, scale_lora_layers, unscale_lora_layers
 import torch
@@ -17,8 +17,8 @@ from cache_functions import cache_init, cal_type
 
 logger = logging.get_logger(__name__)
 
-def taylorseer_flux_forward(
-    self: FluxTransformer2DModel,
+def taylorseer_hunyuan_video_forward(
+    self: HunyuanVideoTransformer3DModel,
     hidden_states: torch.Tensor,
     encoder_hidden_states: torch.Tensor = None,
     pooled_projections: torch.Tensor = None,

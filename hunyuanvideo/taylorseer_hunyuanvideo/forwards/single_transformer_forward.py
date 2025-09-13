@@ -1,10 +1,11 @@
 # TODO: fit for hunyuanvideo
 import torch
 from typing import Any, Dict, Optional, Tuple, Union
-from diffusers.models.transformers.transformer_flux import FluxSingleTransformerBlock
+from diffusers.models.transformers.transformer_hunyuan_video import HunyuanVideoSingleTransformerBlock
 from taylorseer_utils import derivative_approximation, taylor_formula, taylor_cache_init
-def taylorseer_flux_single_block_forward(
-    self: FluxSingleTransformerBlock,
+
+def taylorseer_hunyuan_video_single_block_forward(
+    self: HunyuanVideoSingleTransformerBlock,
     hidden_states: torch.FloatTensor,
     temb: torch.FloatTensor,
     image_rotary_emb=None,
