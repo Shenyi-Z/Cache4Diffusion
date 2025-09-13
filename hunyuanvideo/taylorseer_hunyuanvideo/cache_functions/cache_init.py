@@ -2,14 +2,16 @@
 '''
 In config.json, there is only "Name" attribute and nothing like "num_single_layers", "num_double_layers",
 so we refer to the number of layers in the technique report of HunyuanVideo 
+
+
 '''
 
 num_double_layers = 20
 num_single_layers = 40
 
 
-from diffusers.models import FluxTransformer2DModel
-def cache_init(self: FluxTransformer2DModel, ):   
+from diffusers.models import HunyuanVideoTransformer3DModel
+def cache_init(self: HunyuanVideoTransformer3DModel, ):   
     '''
     Initialization for cache.
     '''
