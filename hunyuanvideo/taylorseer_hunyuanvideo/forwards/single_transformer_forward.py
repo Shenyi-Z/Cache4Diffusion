@@ -13,7 +13,7 @@ def taylorseer_hunyuan_video_single_block_forward(
     image_rotary_emb: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
     *args,
     **kwargs,
-) -> torch.Tensor:
+) -> Tuple[torch.Tensor, torch.Tensor]:
     # ts cache init
     joint_attention_kwargs = kwargs.pop("joint_attention_kwargs", {})
     cache_dic = joint_attention_kwargs['cache_dic']
