@@ -11,11 +11,13 @@ def taylorseer_hunyuan_video_single_block_forward(
     temb: torch.Tensor,
     attention_mask: Optional[torch.Tensor] = None,
     image_rotary_emb: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+    joint_attention_kwargs: Optional[Dict[str, Any]] = None,
     *args,
     **kwargs,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
     # ts cache init
-    joint_attention_kwargs = kwargs.pop("joint_attention_kwargs", {})
+    # joint_attention_kwargs = kwargs.pop("joint_attention_kwargs", {})
+    joint_attention_kwargs = joint_attention_kwargs or {}
     cache_dic = joint_attention_kwargs['cache_dic']
     current = joint_attention_kwargs['current']
 
@@ -73,6 +75,7 @@ def taylorseer_hunyuan_video_single_block_forward(
         
     if hidden_states.dtype == torch.float16:
         hidden_states = hidden_states.clip(-65504, 65504)
+    if encoder_hidden_states.dtype == torch.float16:
+        encoder_hidden_states = encoder_hidden_states.clip(-65504, 65504)
 
-    # TODO: check if single layer return 2 states, or 1
     return hidden_states, encoder_hidden_states

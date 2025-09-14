@@ -1,6 +1,6 @@
-local_model_path="/data/public/model/Qwen/Qwen-Image"
+local_model_path="/data/public/models/Qwen/Qwen-Image"
 model_id="Qwen/Qwen-Image"
-export CUDA_VISIBLE_DEVICES='3, 4, 5, 6'
+export CUDA_VISIBLE_DEVICES='0'
 
 # cd qwen_image
 python qwen_image/taylorseer_qwen_image/diffusers_taylorseer_qwen_image.py \

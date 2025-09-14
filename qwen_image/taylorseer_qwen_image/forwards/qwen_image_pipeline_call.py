@@ -11,7 +11,7 @@ from diffusers.pipelines.qwenimage.pipeline_qwenimage import (
 )
 from diffusers.pipelines.qwenimage.pipeline_output import QwenImagePipelineOutput
 from diffusers.utils import is_torch_xla_available
-from taylorseer_qwen_image.cache_functions import cache_init, cal_type
+from cache_functions import cache_init, cal_type
 
 if is_torch_xla_available():
     import torch_xla.core.xla_model as xm

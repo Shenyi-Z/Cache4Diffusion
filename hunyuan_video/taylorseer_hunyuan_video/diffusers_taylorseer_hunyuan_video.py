@@ -62,14 +62,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         type=str,
-        default="tencent/HunyuanVideo",
+        default="hunyuanvideo-community/HunyuanVideo",
         help="HuggingFace model id or local path.",
     )
     parser.add_argument("--use_taylor", action="store_true", help="Use TaylorSeer speedup.")
     parser.add_argument(
         "--dtype",
         type=str,
-        default="float16",
+        default="bfloat16",
         choices=["float16", "bfloat16", "float32"],
         help="Torch dtype for model weights.",
     )
@@ -88,33 +88,36 @@ def main() -> None:
         torch_dtype = torch.float32
 
     # 1. load model
-    transformer = HunyuanVideoTransformer3DModel.from_pretrained(
-        args.model, subfolder="transformer/hunyuan-video-t2v-720p", torch_dtype=torch.bfloat16
+    pipeline = DiffusionPipeline.from_pretrained(
+        args.model, 
+        torch_dtype=torch.float16,
+        # device_map='balanced'
     )
-    pipeline = HunyuanVideoPipeline.from_pretrained(args.model, transformer=transformer, torch_dtype=torch.float16)
 
-    # FIX: no model_index.json in model repo. It seems the fault in hunyuan video team
-    # pipeline = DiffusionPipeline.from_pretrained(
-    #     args.model,
-    #     torch_dtype=torch_dtype
-    # )
     pipeline.vae.enable_tiling()
     pipeline.to("cuda")
 
     # 2. TaylorSeer settings and forward overrides
     if args.use_taylor:
+        print("Using TaylorSeer speedup for HunyuanVideo...")
         pipeline.transformer.__class__.num_steps = int(args.infer_steps)
-        pipeline.transformer.__class__.forward = taylorseer_hunyuan_video_forward
+        # pipeline.transformer.__class__.forward = taylorseer_hunyuan_video_forward
+        pipeline.transformer.__class__.forward = taylorseer_hunyuan_video_forward.__get__(pipeline.transformer, pipeline.transformer.__class__)
         for double_transformer_block in pipeline.transformer.transformer_blocks:
-            double_transformer_block.__class__.forward = taylorseer_hunyuan_video_double_block_forward
+            # double_transformer_block.__class__.forward = taylorseer_hunyuan_video_double_block_forward
+            double_transformer_block.__class__.forward = taylorseer_hunyuan_video_double_block_forward.__get__(double_transformer_block, double_transformer_block.__class__)
         for single_transformer_block in pipeline.transformer.single_transformer_blocks:
-            single_transformer_block.__class__.forward = taylorseer_hunyuan_video_single_block_forward
+            # single_transformer_block.__class__.forward = taylorseer_hunyuan_video_single_block_forward
+            single_transformer_block.__class__.forward = taylorseer_hunyuan_video_single_block_forward.__get__(single_transformer_block, single_transformer_block.__class__)
+    else:
+        print("Using original HunyuanVideo without TaylorSeer...")
 
     if args.use_cpu_offload:
         raise NotImplementedError("CPU offload is not supported for TaylorSeer yet.")
         pipeline.enable_model_cpu_offload()
     else:
         pipeline.to(args.device)
+        ...
 
     # begin of time recording
     is_cuda = args.device == "cuda" and torch.cuda.is_available()
@@ -137,6 +140,7 @@ def main() -> None:
         num_inference_steps=args.infer_steps,
         generator=torch.Generator("cpu").manual_seed(args.seed),
         guidance_scale=args.embedded_cfg_scale,
+        attention_kwargs={},
     ).frames[0]
 
     # end of time recording

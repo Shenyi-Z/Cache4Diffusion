@@ -10,11 +10,12 @@ from taylorseer_utils import derivative_approximation, taylor_formula, taylor_ca
 
 def taylorseer_hunyuan_video_double_block_forward(
     self: HunyuanVideoTransformerBlock,
-    hidden_states: torch.FloatTensor,
-    encoder_hidden_states: torch.FloatTensor,
+    hidden_states: torch.Tensor,
+    encoder_hidden_states: torch.Tensor,
     temb: torch.FloatTensor,
     attention_mask: Optional[torch.Tensor] = None,
     freqs_cis: Optional[Tuple[torch.Tensor, torch.Tensor]] = None,
+    joint_attention_kwargs: Optional[Dict[str, Any]] = None,
     *args,
     **kwargs,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
@@ -24,8 +25,8 @@ def taylorseer_hunyuan_video_double_block_forward(
         encoder_hidden_states, emb=temb
     )
 
-    joint_attention_kwargs = kwargs.pop("joint_attention_kwargs", {}) or {}
-
+    # joint_attention_kwargs = kwargs.pop("joint_attention_kwargs", {}) or {}
+    joint_attention_kwargs = joint_attention_kwargs or {}
     cache_dic = joint_attention_kwargs['cache_dic']
     current = joint_attention_kwargs['current']
 
@@ -83,6 +84,7 @@ def taylorseer_hunyuan_video_double_block_forward(
         encoder_hidden_states = encoder_hidden_states + c_gate_mlp.unsqueeze(1) * context_ff_output
 
     elif current['type'] == 'Taylor':
+        # print("Taylor speedup for double stream transformer!")
 
         current['module'] = 'attn'
         # Attention.
@@ -114,5 +116,10 @@ def taylorseer_hunyuan_video_double_block_forward(
         context_ff_output = taylor_formula(cache_dic=cache_dic, current=current)
 
         encoder_hidden_states = encoder_hidden_states + c_gate_mlp.unsqueeze(1) * context_ff_output
+    
+    if hidden_states.dtype == torch.float16:
+        hidden_states = hidden_states.clip(-65504, 65504)
+    if encoder_hidden_states.dtype == torch.float16:
+        encoder_hidden_states = encoder_hidden_states.clip(-65504, 65504)
         
-    return encoder_hidden_states, hidden_states
+    return hidden_states, encoder_hidden_states

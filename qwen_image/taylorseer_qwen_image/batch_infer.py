@@ -154,7 +154,7 @@ def main() -> None:
         args.model, 
         torch_dtype=torch_dtype,
         low_cpu_mem_usage=True,
-        device_map = "balanced"
+        device_map = "cuda"
     )
 
     if args.use_taylor:

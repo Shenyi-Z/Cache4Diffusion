@@ -6,8 +6,8 @@ so we refer to the number of layers in the technique report of HunyuanVideo
 
 '''
 
-num_double_layers = 20
-num_single_layers = 40
+# num_double_layers = 20
+# num_single_layers = 40
 
 
 from diffusers.models import HunyuanVideoTransformer3DModel
@@ -31,7 +31,7 @@ def cache_init(self: HunyuanVideoTransformer3DModel, ):
     cache_dic['cache_counter'] = 0
 
     # for j in range(20):
-    for j in range(num_double_layers):
+    for j in range(self.config.num_layers):
         cache[-1]['double_stream'][j] = {}
         cache_index[-1][j] = {}
         cache_dic['attn_map'][-1]['double_stream'][j] = {}
@@ -40,7 +40,7 @@ def cache_init(self: HunyuanVideoTransformer3DModel, ):
         cache_dic['attn_map'][-1]['double_stream'][j]['img_mlp'] = {}
 
     #for j in range(40):
-    for j in range(num_single_layers):
+    for j in range(self.config.num_single_layers):
         cache[-1]['single_stream'][j] = {}
         cache_index[-1][j] = {}
         cache_dic['attn_map'][-1]['single_stream'][j] = {}
@@ -80,5 +80,6 @@ def cache_init(self: HunyuanVideoTransformer3DModel, ):
     current['activated_steps'] = [0]
     current['step'] = 0
     current['num_steps'] = self.num_steps
+    # print("self.num_steps:", self.num_steps)  # check if self.num_steps exists while the name in args is infer_steps, the result is yes.
 
     return cache_dic, current

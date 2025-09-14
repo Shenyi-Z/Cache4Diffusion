@@ -66,7 +66,7 @@ def taylorseer_hunyuan_video_forward(
     cal_type(attention_kwargs['cache_dic'], attention_kwargs['current'])
 
     if attention_kwargs is not None:
-        attention_kwargs = attention_kwargs.copy()
+        attention_kwargs = attention_kwargs.copy()  # 
         lora_scale = attention_kwargs.pop("scale", 1.0)
     else:
         lora_scale = 1.0
@@ -161,10 +161,10 @@ def taylorseer_hunyuan_video_forward(
                 encoder_hidden_states,
                 temb,
                 attention_mask,
-                image_rotary_emb,
-                token_replace_emb,
-                first_frame_num_tokens,
-                attention_kwargs=attention_kwargs,
+                freqs_cis=image_rotary_emb,
+                joint_attention_kwargs=attention_kwargs,
+                # token_replace_emb,
+                # first_frame_num_tokens,
             )
 
         else:                
@@ -173,10 +173,10 @@ def taylorseer_hunyuan_video_forward(
                 encoder_hidden_states,
                 temb,
                 attention_mask,
-                image_rotary_emb,
-                token_replace_emb,
-                first_frame_num_tokens,
-                attention_kwargs=attention_kwargs,
+                freqs_cis=image_rotary_emb,
+                joint_attention_kwargs=attention_kwargs,
+                # token_replace_emb,
+                # first_frame_num_tokens,
             )
             
         # controlnet residual
@@ -205,9 +205,9 @@ def taylorseer_hunyuan_video_forward(
                 temb,
                 attention_mask,
                 image_rotary_emb,
-                token_replace_emb,
-                first_frame_num_tokens,
-                attention_kwargs=attention_kwargs,
+                joint_attention_kwargs=attention_kwargs,
+                # token_replace_emb,
+                # first_frame_num_tokens,
             )
 
         else:
@@ -217,9 +217,9 @@ def taylorseer_hunyuan_video_forward(
                 temb,
                 attention_mask,
                 image_rotary_emb,
-                token_replace_emb,
-                first_frame_num_tokens,
-                attention_kwargs=attention_kwargs,
+                joint_attention_kwargs=attention_kwargs,
+                # token_replace_emb,
+                # first_frame_num_tokens,
             )
 
         # controlnet residual
@@ -246,6 +246,10 @@ def taylorseer_hunyuan_video_forward(
         unscale_lora_layers(self, lora_scale)
     
     attention_kwargs['current']['step'] += 1
+    # print("Step:", attention_kwargs['current']['step'])  # FIX: always 1?
+        # Clip to prevent overflow for fp16
+    if hidden_states.dtype == torch.float16:
+        hidden_states = hidden_states.clip(-65504, 65504)
 
     if not return_dict:
         return (hidden_states,)
