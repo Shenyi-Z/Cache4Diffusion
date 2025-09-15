@@ -21,6 +21,8 @@ SpeCa represents a further advancement beyond TaylorSeer: we recognize that the 
 
 ### c. ClusCa (ACM MM 2025)
 
+ClusCa accelerates diffusion models by jointly exploiting spatial and temporal token similarities instead of previous temporal-only feature caching. Guided by spatial clustering, our approach selectively computes a minimal subset of tokens (as few as 16) at intermediate denoising steps. Feature updates from this subset are then efficiently propagated to all tokens, a mechanism that critically mitigates error accumulation caused by prolonged caching. Experimental results demonstrate that ClusCa achieves significant quality improvements while maintaining competitive acceleration performance (e.g. 0.9949 Image Reward at 4.5 $\times$ speedup).
+
 
 ## TODO List:
 
