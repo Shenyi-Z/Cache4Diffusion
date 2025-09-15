@@ -6,6 +6,7 @@ from typing import List, Optional
 
 import torch
 from diffusers import DiffusionPipeline
+from diffusers.utils import export_to_video
 
 from forwards import (
     taylorseer_hunyuan_video_single_block_forward,
@@ -28,14 +29,24 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--model",
         type=str,
-        default="tencent/HunyuanVideo",
+        default="hunyuanvideo-community/HunyuanVideo",
         help="HuggingFace model id or local path.",
     )
+    parser.add_argument("--video-size", type=int, nargs=2, metavar=("HEIGHT", "WIDTH"), default=(720, 1280),
+                        help="Video size as two integers: HEIGHT WIDTH (e.g. --video-size 720 1280).")
+    parser.add_argument("--video-length", type=int, default=129, help="Number of frames in the generated video.")
+    parser.add_argument("--fps", type=int, default=30, help="Frames per second for the output video.")
     parser.add_argument(
-        "--steps",
+        "--infer-steps",
         type=int,
         default=50,
         help="Number of sampling steps (num_inference_steps).",
+    )
+    parser.add_argument(
+        "--embedded-cfg-scale",
+        type=float,
+        default=6.0,
+        help="Guidance scale for classifier-free guidance.",
     )
     parser.add_argument(
         "--seed",
@@ -58,7 +69,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--dtype",
         type=str,
-        default="float16",
+        default="bfloat16",
         choices=["float16", "bfloat16", "float32"],
         help="Torch dtype for model weights.",
     )
@@ -75,34 +86,18 @@ def parse_args() -> argparse.Namespace:
         help="Filename prefix for saved images.",
     )
     parser.add_argument(
-        "--enable_cpu_offload",
+        "--use_cpu_offload",
         action="store_true",
         help="Enable CPU offload to reduce VRAM usage.",
     )
+    parser.add_argument("--use_taylor", action="store_true", help="Use TaylorSeer speedup.")
     parser.add_argument(
-        "--height",
-        type=int,
-        default=1024,
-        help="Optional image height.",
-    )
-    parser.add_argument(
-        "--width",
-        type=int,
-        default=1024,
-        help="Optional image width.",
-    )
-    parser.add_argument(
-        "--guidance_scale",
-        type=float,
-        default=7.5,
-        help="Optional guidance scale (if supported by the pipeline).",
-    )
-    parser.add_argument(
-        "--max_images",
+        "--max_videos",
         type=int,
         default=None,
         help="Optional maximum number of prompts to process.",
     )
+    parser.add_argument("--save-path", type=str, default="outputs", help="Directory to save the image.")
 
     return parser.parse_args()
 
@@ -147,21 +142,25 @@ def main() -> None:
     print(f"Loading pipeline: {args.model} (dtype={torch_dtype}, device={args.device})")
     pipeline = DiffusionPipeline.from_pretrained(args.model, torch_dtype=torch_dtype)
 
-    # TaylorSeer settings and forward overrides
-    pipeline.transformer.__class__.num_steps = int(args.steps)
-    pipeline.transformer.__class__.forward = taylorseer_flux_forward
-    for double_transformer_block in pipeline.transformer.transformer_blocks:
-        double_transformer_block.__class__.forward = taylorseer_flux_double_block_forward
-    for single_transformer_block in pipeline.transformer.single_transformer_blocks:
-        single_transformer_block.__class__.forward = taylorseer_flux_single_block_forward
+    pipeline.vae.enable_tiling()
+    pipeline.to(args.device)
 
-    if args.enable_cpu_offload:
+    # TaylorSeer settings and forward overrides
+    if args.use_taylor:
+        pipeline.transformer.__class__.num_steps = int(args.infer_steps)
+        pipeline.transformer.__class__.forward = taylorseer_hunyuan_video_forward
+        for double_transformer_block in pipeline.transformer.transformer_blocks:
+            double_transformer_block.__class__.forward = taylorseer_hunyuan_video_double_block_forward
+        for single_transformer_block in pipeline.transformer.single_transformer_blocks:
+            single_transformer_block.__class__.forward = taylorseer_hunyuan_video_single_block_forward
+
+    if args.use_cpu_offload:
         raise NotImplementedError("CPU offload is not supported for TaylorSeer yet.")
         pipeline.enable_model_cpu_offload()
     else:
         pipeline.to(args.device)
 
-    prompts = read_prompts(args.prompt_file, args.max_images)
+    prompts = read_prompts(args.prompt_file, args.max_videos)
     if len(prompts) == 0:
         print("No prompts found. Exiting.")
         return
@@ -174,15 +173,10 @@ def main() -> None:
         parameter_peak_memory = torch.cuda.max_memory_allocated(device="cuda")
         torch.cuda.reset_peak_memory_stats()
 
+    height, width = args.video_size
     for index, prompt in enumerate(prompts):
         effective_seed = args.seed + index if args.unique_seed_per_prompt else args.seed
         generator = torch.Generator(device="cpu").manual_seed(effective_seed)
-
-        height_kw = {"height": args.height} if args.height is not None else {}
-        width_kw = {"width": args.width} if args.width is not None else {}
-        guidance_kw = (
-            {"guidance_scale": float(args.guidance_scale)} if args.guidance_scale is not None else {}
-        )
 
         if is_cuda:
             start = torch.cuda.Event(enable_timing=True)
@@ -191,14 +185,16 @@ def main() -> None:
         else:
             start_time = time.time()
 
-        image = pipeline(
-            prompt,
-            num_inference_steps=int(args.steps),
-            generator=generator,
-            **height_kw,
-            **width_kw,
-            **guidance_kw,
-        ).images[0]
+        output = pipeline(
+            prompt=prompt,
+            height=height,
+            width=width,
+            num_frames=args.video_length,
+            num_inference_steps=args.infer_steps,
+            generator=torch.Generator("cpu").manual_seed(args.seed),
+            guidance_scale=args.embedded_cfg_scale,
+            attention_kwargs={},  # pass attention_kwargs as not None to ensure TaylorSeer works properly,
+        ).frames[0]
 
         if is_cuda:
             end.record()
@@ -210,10 +206,9 @@ def main() -> None:
         total_time_s += elapsed_time_s
         num_images += 1
 
-        safe = sanitize_filename(prompt)
-        filename = f"{args.prefix}_{index:04d}_{safe}.png"
-        save_path = os.path.join(args.outdir, filename)
-        image.save(save_path)
+        save = sanitize_filename(prompt)
+        save_path = os.path.join(args.save_path, f"{args.prefix}_{save}.mp4")
+        export_to_video(output, save_path, fps=args.fps)
         print(f"Saved: {save_path} | time: {elapsed_time_s:.2f}s")
 
     if is_cuda:

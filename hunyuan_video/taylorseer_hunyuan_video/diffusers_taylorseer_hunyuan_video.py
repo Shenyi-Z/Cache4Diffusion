@@ -140,7 +140,7 @@ def main() -> None:
         num_inference_steps=args.infer_steps,
         generator=torch.Generator("cpu").manual_seed(args.seed),
         guidance_scale=args.embedded_cfg_scale,
-        attention_kwargs={},
+        attention_kwargs={},  # pass attention_kwargs as not None to ensure TaylorSeer works properly
     ).frames[0]
 
     # end of time recording
