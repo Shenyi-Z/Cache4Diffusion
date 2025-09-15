@@ -81,7 +81,6 @@ def taylorseer_hunyuan_video_forward(
             )
 
     batch_size, num_channels, num_frames, height, width = hidden_states.shape
-    # TODO: check if self.config exists in hunyuanvideo. config.json only have "Name" attribute
     p, p_t = self.config.patch_size, self.config.patch_size_t
     post_patch_num_frames = num_frames // p_t
     post_patch_height = height // p
@@ -242,12 +241,13 @@ def taylorseer_hunyuan_video_forward(
     hidden_states = hidden_states.flatten(6, 7).flatten(4, 5).flatten(2, 3)
 
     if USE_PEFT_BACKEND:
-        # remove `lora_scale` from each PEFT layer
         unscale_lora_layers(self, lora_scale)
     
     attention_kwargs['current']['step'] += 1
-    # print("Step:", attention_kwargs['current']['step'])  # FIX: always 1?
-        # Clip to prevent overflow for fp16
+    
+    # check_nan(hidden_states, attention_kwargs)
+    
+    # Clip to prevent overflow for fp16
     if hidden_states.dtype == torch.float16:
         hidden_states = hidden_states.clip(-65504, 65504)
 
@@ -255,3 +255,31 @@ def taylorseer_hunyuan_video_forward(
         return (hidden_states,)
 
     return Transformer2DModelOutput(sample=hidden_states)
+
+def check_nan(hidden_states, attention_kwargs):
+    '''
+    count nan/inf in hidden_states
+    '''
+    try:
+        is_finite = torch.isfinite(hidden_states)
+        if not is_finite.all():
+            n_nan = torch.isnan(hidden_states).sum().item()
+            n_posinf = torch.isposinf(hidden_states).sum().item() if hasattr(torch, "isposinf") else 0
+            n_neginf = torch.isneginf(hidden_states).sum().item() if hasattr(torch, "isneginf") else 0
+            finite_mask = is_finite
+            finite_vals = hidden_states[finite_mask]
+            min_v = finite_vals.min().item() if finite_vals.numel() > 0 else float("nan")
+            max_v = finite_vals.max().item() if finite_vals.numel() > 0 else float("nan")
+            logger.warning(
+                f"hidden_states contains non-finite values: nan={n_nan}, +inf={n_posinf}, -inf={n_neginf}, "
+                f"finite_min={min_v:.6g}, finite_max={max_v:.6g}"
+            )
+            # save snapshot for debugging
+            # try:
+            #     snap_path = f"tmp/hidden_states_step_{attention_kwargs['current'].get('step','?')}_layer_{attention_kwargs['current'].get('layer','?')}.pt"
+            #     torch.save(hidden_states.detach().cpu(), snap_path)
+            #     logger.warning(f"Saved hidden_states snapshot to {snap_path}")
+            # except Exception:
+            #     logger.exception("Failed to save hidden_states snapshot")
+    except Exception:
+        logger.exception("Failed while checking hidden_states for NaN/Inf")

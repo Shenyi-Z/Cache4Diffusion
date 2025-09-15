@@ -207,7 +207,8 @@ def main() -> None:
         num_images += 1
 
         save = sanitize_filename(prompt)
-        save_path = os.path.join(args.save_path, f"{args.prefix}_{save}.mp4")
+        filename = f"{args.prefix}_{save}.mp4" if args.use_taylor else f"{save}.mp4"
+        save_path = os.path.join(args.save_path, filename)
         export_to_video(output, save_path, fps=args.fps)
         print(f"Saved: {save_path} | time: {elapsed_time_s:.2f}s")
 
@@ -225,5 +226,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
-

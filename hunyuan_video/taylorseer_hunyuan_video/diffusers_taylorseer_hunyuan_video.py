@@ -157,7 +157,8 @@ def main() -> None:
         print(f"elapsed time: {elapsed_time:.2f} sec")
 
     save = sanitize_filename(args.prompt)
-    save_path = os.path.join(args.save_path, f"{args.prefix}_{save}.mp4")
+    filename = f"{args.prefix}_{save}.mp4" if args.use_taylor else f"{save}.mp4"
+    save_path = os.path.join(args.save_path, filename)
     export_to_video(output, save_path, fps=args.fps)
     print(f"Saved: {save_path}")
 
