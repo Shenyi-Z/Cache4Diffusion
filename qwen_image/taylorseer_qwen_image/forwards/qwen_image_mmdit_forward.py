@@ -80,8 +80,8 @@ def taylorseer_qwen_image_mmdit_forward(
 
         hidden_states = hidden_states + img_gate2 * img_mlp_output
 
-        # ---------------------------- split line -------------------------------
-
+        # txt stream below
+        
         # Process attention outputs for the `encoder_hidden_states` (text stream)
         current['module'] = 'txt_attn'
         taylor_cache_init(cache_dic=cache_dic, current=current)
@@ -120,7 +120,7 @@ def taylorseer_qwen_image_mmdit_forward(
         img_mlp_output = taylor_formula(cache_dic=cache_dic, current=current)
         hidden_states = hidden_states + img_gate2 * img_mlp_output
         
-        # ---------------------------- split line -------------------------------
+        # txt stream below
         
         current['module'] = 'txt_attn'
         txt_attn_output = taylor_formula(cache_dic=cache_dic, current=current)

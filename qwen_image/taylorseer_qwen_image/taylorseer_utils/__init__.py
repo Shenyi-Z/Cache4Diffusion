@@ -16,7 +16,7 @@ def derivative_approximation(cache_dic: Dict, current: Dict, feature: torch.Tens
     updated_taylor_factors[0] = feature
 
     for i in range(cache_dic['max_order']):
-        # cache[-1]里面，指定哪个流的哪一层的哪个模块
+        # In cache[-1], select which stream, which layer and which module to update
         if (cache_dic['cache'][-1][current['stream']][current['layer']][current['module']].get(i, None) is not None) and (current['step'] > cache_dic['first_enhance'] - 2):
             updated_taylor_factors[i + 1] = (updated_taylor_factors[i] - cache_dic['cache'][-1][current['stream']][current['layer']][current['module']][i]) / difference_distance
         else:

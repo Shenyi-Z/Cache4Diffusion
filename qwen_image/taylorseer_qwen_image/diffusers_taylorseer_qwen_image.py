@@ -10,7 +10,6 @@ from diffusers.utils import logging
 from forwards import (
     taylorseer_qwen_image_mmdit_forward,
     taylorseer_qwen_image_forward,
-    taylorseer_qwen_image_pipeline_call,
 )
 
 
@@ -36,7 +35,6 @@ def get_torch_dtype(dtype_name: str) -> torch.dtype:
 
 
 def parse_args() -> argparse.Namespace:
-    # TODO: template from flux, modify for qwen-image
     parser = argparse.ArgumentParser(description="Single-prompt inference for Qwen-Image with TaylorSeer overrides")
     parser.add_argument("--prompt", type=str, required=True, help="Text prompt to generate an image for.")
     parser.add_argument("--steps", type=int, default=50, help="Number of sampling steps (num_inference_steps).")
