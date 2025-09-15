@@ -1,5 +1,3 @@
-cd /root/autodl-tmp
-source /root/miniconda3/etc/profile.d/conda.sh
 conda activate modelscope
 
 python3 batch_infer.py \
