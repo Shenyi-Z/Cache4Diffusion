@@ -2,7 +2,7 @@ cd /root/autodl-tmp
 source /root/miniconda3/etc/profile.d/conda.sh
 conda activate modelscope
 
-python3 multi_prompt_taylorseer_pure.py \
+python3 batch_infer.py \
     --model ./qwenimage \
     --steps 50 \
     --height 1024 \
