@@ -7,7 +7,7 @@ from transformers import T5EncoderModel
 
 from typing import Any, Dict, Optional, Tuple, Union, List
 from diffusers import DiffusionPipeline
-from diffusers.models import FluxTransformer2DModel
+from diffusers.models import QwenImageTransformer2DModel
 from diffusers.models.modeling_outputs import Transformer2DModelOutput
 from diffusers.utils import USE_PEFT_BACKEND, is_torch_version, logging, scale_lora_layers, unscale_lora_layers
 import torch
@@ -91,8 +91,10 @@ def taylorseer_qwen_image_forward(
 
     image_rotary_emb = self.pos_embed(img_shapes, txt_seq_lens, device=hidden_states.device)
 
+    attention_kwargs['current']['stream'] = 'double_stream'
+
     for index_block, block in enumerate(self.transformer_blocks):
-        attention_kwargs['block_idx'] = index_block
+        attention_kwargs['current']['layer'] = index_block
         
         if torch.is_grad_enabled() and self.gradient_checkpointing:
             encoder_hidden_states, hidden_states = self._gradient_checkpointing_func(
@@ -105,6 +107,10 @@ def taylorseer_qwen_image_forward(
             )
 
         else:
+            # if "cuda" in hidden_states.device.type and index_block % 5 == 0: # Print every 5 blocks to avoid spam
+            #     print(f"\n--- Before Block {index_block} (on device: {hidden_states.device}) ---")
+            #     torch.cuda.synchronize()
+            #     print(torch.cuda.memory_summary(abbreviated=True))
             encoder_hidden_states, hidden_states = block(
                 hidden_states=hidden_states,
                 encoder_hidden_states=encoder_hidden_states,
@@ -123,6 +129,7 @@ def taylorseer_qwen_image_forward(
     # Use only the image part (hidden_states) from the dual-stream blocks
     hidden_states = self.norm_out(hidden_states, temb)
     output = self.proj_out(hidden_states)
+    output = output.to(hidden_states.device)
 
     if USE_PEFT_BACKEND:
         # remove `lora_scale` from each PEFT layer
