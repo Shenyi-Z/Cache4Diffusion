@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-"""
-TaylorSeer + QwenImage 纯 Diffusers 实现
-基于 infer.py 的架构，集成 TaylorSeer 优化
-使用纯 diffusers 框架，支持 NPU 设备
-"""
-
 import argparse
 import os
 import re
@@ -17,7 +10,7 @@ import torch.nn as nn
 from diffusers import DiffusionPipeline
 from diffusers.utils import logging as diffusers_logging
 
-# 设置日志
+
 logger = logging.getLogger(__name__)
 diffusers_logging.set_verbosity_info()
 
@@ -29,7 +22,6 @@ if torch.npu.is_available():
     torch.npu.empty_cache()
 
 def sanitize_filename(text: str, max_length: int = 80) -> str:
-    """清理文件名"""
     text = re.sub(r"\s+", " ", text).strip()
     text = text.replace("/", "-")
     text = re.sub(r"[^\w\-\s]", "", text)
@@ -39,7 +31,6 @@ def sanitize_filename(text: str, max_length: int = 80) -> str:
     return text[:max_length]
 
 def get_torch_dtype(dtype_name: str) -> torch.dtype:
-    """获取torch数据类型"""
     if dtype_name == "bfloat16":
         return torch.bfloat16
     if dtype_name == "float16":
@@ -47,13 +38,8 @@ def get_torch_dtype(dtype_name: str) -> torch.dtype:
     return torch.float32
 
 def apply_taylorseer_optimization(pipeline: DiffusionPipeline, device: str = "npu") -> DiffusionPipeline:
-    """
-    应用 TaylorSeer 优化到 QwenImage pipeline
-    基于纯 diffusers 的实现方式
-    """
     logger.info(f"Applying TaylorSeer optimization to QwenImage pipeline on {device}")
-    
-    # 获取目标模型
+
     target_model = None
     if hasattr(pipeline, "transformer"):
         target_model = pipeline.transformer
@@ -62,12 +48,11 @@ def apply_taylorseer_optimization(pipeline: DiffusionPipeline, device: str = "np
     else:
         logger.warning("No transformer/unet module found; TaylorSeer cannot be applied")
         return pipeline
-    
-    # 保存原始 forward 方法
+
     if not hasattr(target_model, '_original_forward_method'):
         target_model._original_forward_method = target_model.forward
     
-    # 创建包装的forward方法
+
     def taylorseer_forward_wrapper(*args, **kwargs):
         """
         TaylorSeer 优化的前向传播包装器
