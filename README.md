@@ -26,6 +26,6 @@ ClusCa accelerates diffusion models by jointly exploiting spatial and temporal t
 
 ## TODO List:
 
-- [v] Fully support HunyuanVideo
+- [x] Fully support HunyuanVideo
 - [ ] Support Wan2.2
 - [ ] Support HunyuanImage2.1
