@@ -1,6 +1,11 @@
 # Cache4Diffusion
 Aiming to integrate most existing feature caching-based diffusion acceleration schemes into a unified framework.
 
+Over $6 \times$ training-free acceleration on FLUX-dev.
+![FLUX](./assets/examples/FLUX.png)
+Over $4 \times$ training-free acceleration on Qwen-Image.
+![Qwen-Image](./assets/examples/Qwen-Image.png)
+
 ## Key Features: 
 - More advanced feature cahing-based methods.
 - Support both **Nvidia** GPUs and **Ascend** NPUs (see in the folder `./ascend/`).
