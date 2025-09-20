@@ -1,0 +1,13 @@
+python taylorseer_lite_hyimage/run_taylorseer_lite_hyimage.py \
+    --model_name hunyuanimage-v2.1 \
+    --seed 649151 \
+    --width 2048 \
+    --height 2048 \
+    --shift 5 \
+    --guidance_scale 3.5 \
+    --outdir outputs \
+    --prefix TaylorSeer \
+    --prompt "A cute, cartoon-style anthropomorphic penguin plush toy with fluffy fur, standing in a painting studio, wearing a red knitted scarf and a red beret with the word \"Tencent\" on it, holding a paintbrush with a focused expression as it paints an oil painting of the Mona Lisa, rendered in a photorealistic photographic style." \
+    --use_reprompt \
+    --use_refiner \
+    --use_taylorseer_lite

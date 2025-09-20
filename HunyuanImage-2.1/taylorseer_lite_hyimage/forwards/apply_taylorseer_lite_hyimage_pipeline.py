@@ -65,7 +65,7 @@ def apply_taylorseer_lite_hyimage_pipeline(pipeline):
     def __call_taylorseer_lite_pipeline(
         self,
         prompt: str,
-        shift: int = 4,
+        shift: int = 5,
         negative_prompt: str = "",
         width: int = 2048,
         height: int = 2048,
@@ -96,6 +96,7 @@ def apply_taylorseer_lite_hyimage_pipeline(pipeline):
         """
         if seed is not None:
             generator = torch.Generator(device='cpu').manual_seed(seed)
+            torch.manual_seed(seed)
         else:
             generator = None
 
@@ -109,6 +110,7 @@ def apply_taylorseer_lite_hyimage_pipeline(pipeline):
                 self.offload()
             prompt = self.reprompt_model.predict(prompt)
 
+
         print("=" * 60)
         print("🖼️  HunyuanImage Generation Task")
         print("-" * 60)
@@ -120,7 +122,7 @@ def apply_taylorseer_lite_hyimage_pipeline(pipeline):
         print(f"Guidance Scale:   {guidance_scale}")
         print(f"CFG Mode:         {self.cfg_mode}")
         print(f"Guidance Rescale: {self.guidance_rescale}")
-        print(f"Shift:            {self.shift}")
+        print(f"Shift:            {shift}")
         print(f"Seed:             {seed}")
         print(f"Use MeanFlow:     {self.use_meanflow}")
         print(f"Use byT5:         {self.use_byt5}")
@@ -161,6 +163,8 @@ def apply_taylorseer_lite_hyimage_pipeline(pipeline):
 
         timesteps, sigmas = self.get_timesteps_sigmas(sampling_steps, shift)
 
+        self.dit.to(self.execution_device)
+
         cache_dic, current = cache_init(sampling_steps)
 
         for i, t in enumerate(tqdm(timesteps, desc="Denoising", total=len(timesteps))):
@@ -169,7 +173,7 @@ def apply_taylorseer_lite_hyimage_pipeline(pipeline):
             t_expand = t.repeat(latent_model_input.shape[0])
             if self.use_meanflow:
                 if i == len(timesteps) - 1:
-                    timesteps_r = torch.tensor([0.0], device=self.device)
+                    timesteps_r = torch.tensor([0.0], device=self.execution_device)
                 else:
                     timesteps_r = timesteps[i + 1]
                 timesteps_r = timesteps_r.repeat(latent_model_input.shape[0])
@@ -191,15 +195,21 @@ def apply_taylorseer_lite_hyimage_pipeline(pipeline):
             latents = self.step(latents, noise_pred, sigmas, i)
 
 
+        if self.config.enable_full_dit_offloading:
+            self.dit.to('cpu')
+        self.vae.to(self.execution_device)
         image = self._decode_latents(latents)
+        if self.config.enable_vae_offloading:
+            self.vae.to('cpu')
         image = (image.squeeze(0).permute(1, 2, 0) * 255).byte().numpy()
         pil_image = Image.fromarray(image)
+        stats = torch.cuda.memory_stats()
+        peak_bytes_requirement = stats["allocated_bytes.all.peak"]
+        print(f"Before refiner Peak memory requirement: {peak_bytes_requirement / 1024 ** 3:.2f} GB")
 
         if use_refiner:
-            if self.enable_dit_offloading:
-                self.to('cpu')
-            if self.enable_refiner_offloading:
-                self.refiner_pipeline.to(self.execution_device)
+            if self.config.enable_stage1_offloading:
+                self.offload()
             pil_image = self.refiner_pipeline(
                 image=pil_image,
                 prompt=prompt,
@@ -211,11 +221,10 @@ def apply_taylorseer_lite_hyimage_pipeline(pipeline):
                 num_inference_steps=4,
                 guidance_scale=guidance_scale,
                 generator=generator,
+                seed=seed,
             )
-            if self.enable_refiner_offloading:
-                self.refiner_pipeline.to('cpu')
-            if self.enable_dit_offloading:
-                self.to(self.execution_device)
+            if self.config.enable_refiner_offloading:
+                self.refiner_pipeline.offload()
 
         return pil_image
 
