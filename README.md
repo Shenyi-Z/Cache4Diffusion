@@ -41,3 +41,7 @@ ClusCa accelerates diffusion models by jointly exploiting spatial and temporal t
 - [x] Fully support HunyuanVideo
 - [ ] Support Wan2.2
 - [x] Support HunyuanImage2.1
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=Shenyi-Z/Cache4Diffusion&type=Date)](https://www.star-history.com/#Shenyi-Z/Cache4Diffusion&Date)
