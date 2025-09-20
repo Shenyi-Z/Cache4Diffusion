@@ -38,6 +38,8 @@ outputs/
 logs/
 *.log
 tmp/
+*/outputs/
+*/ckpts/
 
 .env
 .vscode

@@ -21,6 +21,12 @@ original repo:  [TaylorSeer](https://github.com/Shenyi-Z/TaylorSeer)
 
 Taylorseer is an upgraded version of the traditional feature caching method, evolving from the original "cache then reuse" paradigm to the "cache then forecast" paradigm, indicating that the features of diffusion models can be predicted. For example, in this work, they use a simple Taylor series formula to predict features, easily achieving approximately a 5 $\times$ speedup on models like Flux, Qwen-Image and HunyuanVideo.
 
+#### TaylorSeer-Lite
+
+TaylorSeer-Lite is a VRAM-optimized version based on TaylorSeer, motivated by the following consideration: TaylorSeer caches the output of each NN in the layer x = x + alpha NN(x). For an order 2 model with 60 blocks, each containing 2 modules (e.g., attn and mlp/moe), this results in caching n_order  n_blocks * n_module = 240 tensors, significantly increasing VRAM usage and reducing deployability. To address this, we modified it to cache only at the output of the final block, thereby eliminating the multiplicative increase in cache size due to n_blocks and n_module. Empirical results show that this modification has little impact on quality while providing substantial VRAM savings and I/O speed improvements—using the Lite version eliminates the need for compilation optimizations to accelerate cache operations, making Feature Caching more practical in real-world applications.
+
+In the support for HunyuanImage-2.1, we adopted TaylorSeer-Lite, resulting in a 5x acceleration in 2k generation. Refer to `HunyuanImage-2.1/taylorseer_hunyuan_image`.
+
 ### b. SpeCa (ACM MM 2025) <a href='https://www.arxiv.org/abs/2509.11628'><img src='https://img.shields.io/badge/Paper-arXiv-red'></a>
 
 SpeCa represents a further advancement beyond TaylorSeer: we recognize that the generation difficulty varies across different samples, making it necessary to adaptively adjust computational costs based on sample complexity. Drawing inspiration from the concept of speculative decoding in language models, we introduce it into diffusion models and employ TaylorSeer as a "draft model" capable of providing high-speed inference, thereby achieving further breakthroughs in acceleration. For instance, on models such as Flux and HunyuanVideo, we have achieved nearly or even exceeding a 6x speedup.
@@ -34,4 +40,4 @@ ClusCa accelerates diffusion models by jointly exploiting spatial and temporal t
 
 - [x] Fully support HunyuanVideo
 - [ ] Support Wan2.2
-- [ ] Support HunyuanImage2.1
+- [x] Support HunyuanImage2.1
