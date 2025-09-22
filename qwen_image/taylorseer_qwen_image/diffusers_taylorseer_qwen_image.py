@@ -125,7 +125,7 @@ def main() -> None:
         # height=int(args.height) if hasattr(args, 'height') else 1024,
         num_inference_steps=int(args.steps),
         true_cfg_scale=float(args.true_cfg_scale),
-        generator=torch.Generator("cuda").manual_seed(int(args.seed)),
+        generator=torch.Generator("cpu").manual_seed(int(args.seed)),
     ).images[0]
 
     if is_cuda:
