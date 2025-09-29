@@ -534,7 +534,7 @@ class MMSingleStreamBlock(nn.Module):
             derivative_approximation(cache_dic, current, output)
             
             x = x + apply_gate(output, gate=mod_gate)
-        
+
         elif current['type'] == 'taylor_cache':
             
             current['module'] = 'total'
@@ -625,8 +625,7 @@ class MMSingleStreamBlock(nn.Module):
                     
                     current['last_layer_error'] = error_value
 
-        return x + apply_gate(output, gate=mod_gate)
-
+        return x
 @torch.compile
 def single_cache_step(x:torch.Tensor,
                       total_dict:dict,
@@ -918,49 +917,48 @@ class HYVideoDiffusionTransformer(ModelMixin, ConfigMixin):
 
         cal_type(cache_dic, current)
 
-        if current['compute']:
 
-            current['stream'] = 'double_stream'
+        current['stream'] = 'double_stream'
 
-            for i, block in enumerate(self.double_blocks):
+        for i, block in enumerate(self.double_blocks):
+            current['layer'] = i
+            double_block_args = [
+                img,
+                txt,
+                vec,
+                cu_seqlens_q,
+                cu_seqlens_kv,
+                max_seqlen_q,
+                max_seqlen_kv,
+                freqs_cis,
+                cache_dic, ##
+                current, ##
+            ]
+
+            img, txt = block(*double_block_args)
+
+        # Merge txt and img to pass through single stream blocks.
+        x = torch.cat((img, txt), 1)
+
+        current['stream'] = 'single_stream'
+
+        if len(self.single_blocks) > 0:
+            for i, block in enumerate(self.single_blocks):
                 current['layer'] = i
-                double_block_args = [
-                    img,
-                    txt,
+                single_block_args = [
+                    x,
                     vec,
+                    txt_seq_len,
                     cu_seqlens_q,
                     cu_seqlens_kv,
                     max_seqlen_q,
                     max_seqlen_kv,
-                    freqs_cis,
+                    (freqs_cos, freqs_sin),
                     cache_dic, ##
                     current, ##
                 ]
 
-                img, txt = block(*double_block_args)
-
-            # Merge txt and img to pass through single stream blocks.
-            x = torch.cat((img, txt), 1)
-
-            current['stream'] = 'single_stream'
-
-            if len(self.single_blocks) > 0:
-                for i, block in enumerate(self.single_blocks):
-                    current['layer'] = i
-                    single_block_args = [
-                        x,
-                        vec,
-                        txt_seq_len,
-                        cu_seqlens_q,
-                        cu_seqlens_kv,
-                        max_seqlen_q,
-                        max_seqlen_kv,
-                        (freqs_cos, freqs_sin),
-                        cache_dic, ##
-                        current, ##
-                    ]
-
-                    x = block(*single_block_args)
+                x = block(*single_block_args)
 
 
         img = x[:, :img_seq_len, ...]

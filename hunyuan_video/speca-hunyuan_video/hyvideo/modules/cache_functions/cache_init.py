@@ -44,7 +44,7 @@ def cache_init(num_steps, model_kwargs=None):
         cache_dic['decay_rate'] = 0.1
         cache_dic['min_taylor_steps'] = 4
         cache_dic['max_taylor_steps'] = 12
-        cache_dic['error_metric'] = 'relative_l2'  
+        cache_dic['error_metric'] = 'relative_l1'  
 
     current = {}
     current['num_steps'] = num_steps
