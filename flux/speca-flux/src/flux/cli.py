@@ -109,6 +109,11 @@ def main(
     offload: bool = False,
     output_dir: str = "output",
     add_sampling_metadata: bool = True,
+    # taylor/cache control defaults to avoid None in cache_denoise
+    base_threshold: float = 7.0,
+    decay_rate: float = 0.3,
+    min_taylor_steps: int = 2,
+    max_taylor_steps: int = 8,
 ):
     """
     Sample the flux model. Either interactively (set `--loop`) or run for a
@@ -202,7 +207,16 @@ def main(
             model = model.to(torch_device)
 
         # denoise initial noise
-        x = denoise_cache(model, **inp, timesteps=timesteps, guidance=opts.guidance)
+        x = denoise_cache(
+            model,
+            **inp,
+            timesteps=timesteps,
+            guidance=opts.guidance,
+            base_threshold=base_threshold,
+            decay_rate=decay_rate,
+            min_taylor_steps=min_taylor_steps,
+            max_taylor_steps=max_taylor_steps,
+        )
 
         # offload model, load autoencoder to gpu
         if offload:

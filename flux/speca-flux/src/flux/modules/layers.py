@@ -8,7 +8,14 @@ import numpy as np
 from flux.math import attention, rope
 
 from flux.taylor_utils import taylor_formula, derivative_approximation, taylor_cache_init
-from flux.model import calculate_l1_error, calculate_l2_error, calculate_relative_l1_error, calculate_relative_l2_error, calculate_cosine_similarity_error, calculate_all_errors
+from flux.metrics import (
+    calculate_l1_error,
+    calculate_l2_error,
+    calculate_relative_l1_error,
+    calculate_relative_l2_error,
+    calculate_cosine_similarity_error,
+    calculate_all_errors,
+)
 
 class EmbedND(nn.Module):
     def __init__(self, dim: int, theta: int, axes_dim: list[int]):

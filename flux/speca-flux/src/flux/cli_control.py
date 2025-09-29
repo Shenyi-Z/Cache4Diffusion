@@ -9,7 +9,7 @@ from fire import Fire
 from transformers import pipeline
 
 from flux.modules.image_embedders import CannyImageEncoder, DepthImageEncoder
-from flux.sampling import denoise, get_noise, get_schedule, prepare_control, unpack
+from flux.sampling import denoise, get_noise, get_schedule, prepare_control, unpack, denoise_test_FLOPs
 from flux.util import configs, load_ae, load_clip, load_flow_model, load_t5, save_image
 from flux.ideas import denoise_cache
 
@@ -23,6 +23,12 @@ class SamplingOptions:
     seed: int | None
     img_cond_path: str
     lora_scale: float | None
+    # extra options aligned with sample.py
+    test_FLOPs: bool
+    base_threshold: float
+    decay_rate: float
+    min_taylor_steps: int
+    max_taylor_steps: int
 
 
 def parse_prompt(options: SamplingOptions) -> SamplingOptions | None:
@@ -174,6 +180,12 @@ def main(
     add_sampling_metadata: bool = True,
     img_cond_path: str = "assets/robot.webp",
     lora_scale: float | None = 0.85,
+    # extended args to match sample.py
+    test_FLOPs: bool = False,
+    base_threshold: float = 7.0,
+    decay_rate: float = 0.3,
+    min_taylor_steps: int = 2,
+    max_taylor_steps: int = 8,
 ):
     """
     Sample the flux model. Either interactively (set `--loop`) or run for a
@@ -255,6 +267,11 @@ def main(
         seed=seed,
         img_cond_path=img_cond_path,
         lora_scale=lora_scale,
+        test_FLOPs=test_FLOPs,
+        base_threshold=base_threshold,
+        decay_rate=decay_rate,
+        min_taylor_steps=min_taylor_steps,
+        max_taylor_steps=max_taylor_steps,
     )
 
     if loop:
@@ -303,8 +320,29 @@ def main(
             torch.cuda.empty_cache()
             model = model.to(torch_device)
 
-        # denoise initial noise
-        x = denoise_cache(model, **inp, timesteps=timesteps, guidance=opts.guidance)
+        # denoise initial noise (choose path)
+        if opts.test_FLOPs:
+            x = denoise_test_FLOPs(
+                model,
+                **inp,
+                timesteps=timesteps,
+                guidance=opts.guidance,
+                base_threshold=opts.base_threshold,
+                decay_rate=opts.decay_rate,
+                min_taylor_steps=opts.min_taylor_steps,
+                max_taylor_steps=opts.max_taylor_steps,
+            )
+        else:
+            x = denoise_cache(
+                model,
+                **inp,
+                timesteps=timesteps,
+                guidance=opts.guidance,
+                base_threshold=opts.base_threshold,
+                decay_rate=opts.decay_rate,
+                min_taylor_steps=opts.min_taylor_steps,
+                max_taylor_steps=opts.max_taylor_steps,
+            )
 
         # offload model, load autoencoder to gpu
         if offload:
@@ -322,7 +360,7 @@ def main(
         t1 = time.perf_counter()
         print(f"Done in {t1 - t0:.1f}s")
 
-        idx = save_image(nsfw_classifier, name, output_name, idx, x, add_sampling_metadata, prompt)
+        idx = save_image(nsfw_classifier, name, output_name, idx, x, add_sampling_metadata, opts.prompt)
 
         if loop:
             print("-" * 80)
