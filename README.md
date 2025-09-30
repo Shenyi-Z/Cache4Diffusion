@@ -42,6 +42,9 @@ ClusCa accelerates diffusion models by jointly exploiting spatial and temporal t
 - [ ] Support Wan2.2
 - [x] Support HunyuanImage2.1
 
+## Review of Cache
+We are currently conducting a review of diffusion acceleration cache. For more details, please refer to the [Awesome-Diffusion-Acceleration-Cache repository](https://github.com/Tammytcl/Awesome-Diffusion-Acceleration-Cache).
+
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=Shenyi-Z/Cache4Diffusion&type=Date)](https://www.star-history.com/#Shenyi-Z/Cache4Diffusion&Date)
