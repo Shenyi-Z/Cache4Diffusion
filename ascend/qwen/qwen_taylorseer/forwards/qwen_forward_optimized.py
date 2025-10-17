@@ -1,8 +1,3 @@
-"""
-QwenImage模型的真正TaylorSeer前向传播
-恢复完整的缓存机制、特征复用和注意力优化
-"""
-
 import torch
 import torch.nn as nn
 from typing import Any, Dict, Optional, Tuple, Union
@@ -13,7 +8,6 @@ from ..cache_functions import NPUOptimizer, cache_init, cal_type
 logger = logging.getLogger(__name__)
 
 def _ensure_ts_ctx_real(module) -> dict:
-    """真正的缓存上下文初始化"""
     ctx = getattr(module, '_taylorseer_kwargs', None)
     if ctx is None:
         # 初始化真正的缓存
