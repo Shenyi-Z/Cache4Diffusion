@@ -1,0 +1,1 @@
+torch==2.1.0# Ascend NPU support (ensure version matches your PyTorch/Ascend stack)torch_npu==2.1.0.post6diffusers==0.29.2accelerate==0.33.0transformers==4.43.4safetensors==0.4.4pillow==10.4.0numpy==1.26.4
