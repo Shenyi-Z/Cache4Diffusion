@@ -1,8 +1,3 @@
-"""
-前向传播模块
-包含QwenImage模型的TaylorSeer前向传播重写
-"""
-
 from .qwen_forward import (
     qwen_taylorseer_forward,
     apply_taylorseer_to_qwen,
