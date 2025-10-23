@@ -46,7 +46,7 @@ def cache_cutfresh(cache_dic, tokens, current):
     fresh_tokens = torch.gather(input = tokens, dim = 1, index = fresh_indices_expand)
     return fresh_indices, fresh_tokens
 
-def cache_cutfresh_with_ClusCa(cache_dic, tokens, current):
+def cache_cutfresh_by_cluster(cache_dic, tokens, current):
     '''
     Cut fresh tokens from the input tokens and update the cache counter.(ClusCa)
     
