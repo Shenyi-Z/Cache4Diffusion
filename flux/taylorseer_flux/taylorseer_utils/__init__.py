@@ -2,6 +2,8 @@ from typing import Dict
 import torch
 import math
 
+from dmd_utils import dmd_snapshot_update, dmd_formula
+
 def derivative_approximation(cache_dic: Dict, current: Dict, feature: torch.Tensor):
     """
     Compute derivative approximation.
@@ -23,6 +25,11 @@ def derivative_approximation(cache_dic: Dict, current: Dict, feature: torch.Tens
     
     cache_dic['cache'][-1][current['stream']][current['layer']][current['module']] = updated_taylor_factors
 
+    if cache_dic.get('forecast_basis', 'taylor') == 'dmd':
+        # Dynamic Mode Decomposition (Prony) exponential basis: also record the raw
+        # feature snapshot; the Taylor factors above remain the warm-up fallback.
+        dmd_snapshot_update(cache_dic, current, feature)
+
 def taylor_formula(cache_dic: Dict, current: Dict) -> torch.Tensor: 
     """
     Compute Taylor expansion error.
@@ -30,6 +37,14 @@ def taylor_formula(cache_dic: Dict, current: Dict) -> torch.Tensor:
     :param cache_dic: Cache dictionary
     :param current: Information of the current step
     """
+    if cache_dic.get('forecast_basis', 'taylor') == 'dmd':
+        # Dynamic Mode Decomposition (Prony) exponential forecast; falls back to the
+        # Taylor expansion below during warm-up (< 4 uniformly spaced snapshots) or
+        # on a degenerate fit.
+        output = dmd_formula(cache_dic, current)
+        if output is not None:
+            return output
+
     x = current['step'] - current['activated_steps'][-1]
     #x = current['t'] - current['activated_times'][-1]
     output = 0
