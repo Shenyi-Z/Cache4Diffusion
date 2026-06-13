@@ -63,6 +63,16 @@ def cache_init(self: FluxTransformer2DModel, ):
         cache_dic['taylor_cache'] = True
         cache_dic['max_order'] = 1
         cache_dic['first_enhance'] = 3
+        # Forecast basis: 'taylor' (polynomial, default) or 'dmd' — the Dynamic Mode
+        # Decomposition (Prony) EXPONENTIAL basis. Diffusion features locally follow a
+        # near-linear feature-ODE whose exact solution class is a sum of damped /
+        # oscillatory exponentials, so the exponential basis keeps quality at larger
+        # fresh_threshold where the polynomial diverges. Needs >= 4 uniformly spaced
+        # snapshots before it engages (Taylor covers warm-up automatically).
+        cache_dic['forecast_basis'] = 'taylor'
+        cache_dic['dmd_history'] = 6
+        cache_dic['dmd_rank'] = 0
+        cache_dic['dmd_ridge'] = 1e-8
 
     current = {}
     current['activated_steps'] = [0]
